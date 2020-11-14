@@ -2,38 +2,51 @@
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <string.h> 
-#include <sys/socket.h> 
+#include <sys/socket.h>
+#include <unistd.h>
 
 #define MAX 1024 
 #define PORT 8080 
 #define SA struct sockaddr 
 
+struct cient_t
+{
+    int id_client;
+    int id_compte;
+    string password;
+    float solde;
+    char operation[10];
+};
+
+
 void commu(int sockfd) 
 { 
-    char buff[MAX]; 
+    char reponse[MAX]; 
     int n; 
-
+    char operation[MAX];
+    bzero(reponse, sizeof(reponse)); 
     for (;;) { 
-        bzero(buff, sizeof(buff)); 
-        printf("Taper le message : "); 
+        read(sockfd,reponse,sizeof(reponse));
+        printf("Message serveur : %s\n",reponse );
 
-        //écrit le message du client dans le buff
+        //écrit l'opération du client dans la opération
         n = 0; 
-        while ((buff[n++] = getchar()) != '\n'); 
-        write(sockfd, buff, sizeof(buff)); 
+        while ((operation[n++] = getchar()) != '\n');
+        write(sockfd, operation, sizeof(operation)); 
 
         //réinitialisation, lire le message du serveur et l'affichier 
-        bzero(buff, sizeof(buff)); 
-        read(sockfd, buff, sizeof(buff)); 
-        printf("Message Serveur : %s", buff); 
+        //bzero(reponse, sizeof(reponse)); 
+        read(sockfd, reponse, sizeof(reponse)); 
+        printf("Message Serveur : %s\n", reponse); 
 
         //vérification de l'existence de exit dans le message
-        if ((strncmp(buff, "exit", 4)) == 0) { 
+        if ((strncmp(reponse, "exit", 4)) == 0) { 
             printf("Client Exit...\n"); 
             break; 
         } 
     } 
 } 
+
   
 int main() 
 { 
