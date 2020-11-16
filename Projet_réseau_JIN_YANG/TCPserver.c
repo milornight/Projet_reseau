@@ -12,94 +12,129 @@
 #define PORT 8080 
 #define SA struct sockaddr
 #define Somme
+#define nbCli 2
 
-typedef struct
-{
-    int jour;
-    int mois;
-    int annee;
-}DATE;
 
 typedef struct 
 {
-    char type;
+    char *type;
     float montant;
-    DATE date;
+    char *date;
 }OPERATION;
 
 typedef struct
 {
     int id_client;
     int id_compte;
-    string password;
+    char *password;
     float solde;
     OPERATION operation[10];
 }CLIENT;
 
-CLIENT cli[MAX];
 
-int ajout(int client, int compte, int password, float somme)
+CLIENT cli[nbCli];
+time_t rawtime;
+
+int ajout(int client, int compte, char *password, float somme)
 {
-    int res = -1;
-    for (int i = 0; i<MAX; i++)
+    for (int i = 0; i<nbCli; i++)
     {
-        if (cli[i].id_client==client && cli[i].id_compte==compte && cli[i].passeword==password)
+        if (cli[i].id_client==client && cli[i].id_compte==compte && cli[i].password==password)
         {
             cli[i].solde +=somme;
-            res = 1;
-            break;
-        }
-    }
-    return res;
-}
-
-int retrait(int client, int compte, string password, float somme)
-{
-    int res = -1;
-    for (int i = 0; i<MAX; i++)
-    {
-        if (cli[i].id_client==client && cli[i].id_compte==compte && cli[i].passeword==password)
-        {
-            cli[i].solde -=somme;
-            res = 1;
-            break;
-        }
-    }
-    return res;
-}
-
-float solde(int client, int compte, string password)
-{
-    for (int i=0; i<MAX; i++)
-    {
-        if(cli[i].id_client==client && cli[i].id_compte==compte && cli[i].passeword==password)
-        {
-            return cli[i].solde;
+            
+            for (int j=0; j<10; j++)
+            {
+                if (cli[i].operation[j].type =='\0')
+                {
+                    cli[i].operation[j].type = "Ajout";
+                    cli[i].operation[j].montant = cli[i].solde;
+                    cli[i].operation[j].date = ctime(&rawtime);
+                    break;
+                }else{
+                    if(j==9)
+                    {
+                        for (int k=0; k<9; k++)
+                        {
+                            cli[i].operation[k]=cli[i].operation[k+1];
+                        }
+                        cli[i].operation[9].type = "Ajout";
+                        cli[i].operation[9].montant = cli[i].solde;
+                        cli[i].operation[9].date = ctime(&rawtime);
+                    }
+                }
+            }
+            return 1;
         }
     }
     return -1;
 }
 
-int operations(int client, int compte, string password)
+int retrait(int client, int compte, char *password, float somme)
 {
-    int res = -1;
-    for (int i=0; i<MAX; i++)
+    for (int i = 0; i<nbCli; i++)
     {
-        if(cli[i].id_client==client && cli[i].id_compte==compte && cli[i].passeword==password)
+        if (cli[i].id_client==client && cli[i].id_compte==compte && cli[i].password==password)
         {
+            cli[i].solde -=somme;
             for (int j=0; j<10; j++)
             {
-                printf("%s  date: %d/%d/%d  solde:%f\n",cli[i]->operation[j]->type,
-                                                        cli[i]->operation[j]->date->jour,
-                                                        cli[i]->operation[j]->date->mois,
-                                                        cli[i]->operation[j]->date->annee,
-                                                        cli[i]->operation[j]->montant);
+                if (cli[i].operation[j].type =='\0')
+                {
+                    cli[i].operation[j].type = "Retrait";
+                    cli[i].operation[j].montant = cli[i].solde;
+                    cli[i].operation[j].date = ctime(&rawtime);
+                    break;
+                }else{
+                    if(j==9)
+                    {
+                        for (int k=0; k<9; k++)
+                        {
+                            cli[i].operation[k]=cli[i].operation[k+1];
+                        }
+                        cli[i].operation[9].type = "Retrait";
+                        cli[i].operation[9].montant = cli[i].solde;
+                        cli[i].operation[9].date = ctime(&rawtime);
+                    }
+                }
             }
-            res = 1;
+            return 1;
+        }
+    }
+    return -1;
+}
+
+void solde(int client, int compte, char *password)
+{
+    for (int i=0; i<nbCli; i++)
+    {
+        if(cli[i].id_client==client && cli[i].id_compte==compte && cli[i].password==password)
+        {
+            int cpt=0;
+            if (cli[i].operation[cpt].type !='\0')
+            {
+                cpt++;
+            }
+            printf("solde:%f , date:%s ", cli[i].solde,cli[i].operation[cpt-1].date);
+        }
+    }
+}
+
+void operations(int client, int compte, char *password)
+{
+    for (int i=0; i<nbCli; i++)
+    {
+        if(cli[i].id_client==client && cli[i].id_compte==compte && cli[i].password==password)
+        {
+            for (int j=9; j>=0; j--)
+            {
+                printf("%s  date: %s  solde:%f\n",cli[i].operation[j].type,
+                                                    cli[i].operation[j].date,
+                                                    cli[i].operation[j].montant);
+            }
             break;
         }
     }
-    return res;
 }
 
 
@@ -108,38 +143,87 @@ void commu(int sockfd)
 { 
     char reponse[MAX];
     int n; 
-    char operation[MAX];
-    char opere[4] = {"Ajout","Retrait","Solde","Operation"};
-    char id_client[MAX];
-    char id_compte[MAX];
-    char password[MAX];
-    char somme[MAX];
+    char demande[MAX];
+    int id_client;
+    int id_compte;
+    char *password;
+    float somme;
 
     // communication sans arrêt
     for (;;) { 
         bzero(reponse, MAX);  //initialiser le buff en zéro
-        bzero(operation, MAX);  //initialiser l'opération en zéro
+        bzero(demande, MAX);  //initialiser l'opération en zéro
         
         strcpy(reponse,"Saisir l'un des opérations suivantes : \nAjout\nRetrait\nSolde\nOperations\n");
         write(sockfd,reponse,sizeof(reponse));
         bzero(reponse, MAX);  //initialiser le buff en zéro
         
         // lire l'operation de client et copier dans buff
-        read(sockfd, operation, sizeof(operation)); 
+        read(sockfd, demande, sizeof(demande)); 
         // afficher l'opération dans le terminal
-        printf("Opération du client: %s\t", operation);
+        printf("Opération du client: %s\t", demande);
 
-        for (int i = 0; i < 4; i++){
-            if(*operation == opere[i]){
-                strcpy(reponse,"Saisir votre id de client :");
-                //copier le message de serveur dans la réponse et envoie au client
-                write(sockfd,reponse,sizeof(reponse));
+        if (strncmp("Ajout", demande, 5) == 0)
+        {
+            char *pch;
+            int Res;
+            pch = strtok(demande, " ");
+            id_client=(int)pch[1];
+            id_compte=(int)pch[2];
+            password=&pch[3];
+            somme=(float)pch[4];
+            Res = ajout(id_client,id_compte,password,somme);
+            if(Res==-1)
+            {
+                strcpy(reponse,"KO");
+                write(sockfd,reponse,sizeof(reponse)); 
+            }else{
+                strcpy(reponse,"OK");
+                write(sockfd,reponse,sizeof(reponse)); 
             }
         }
-        if(!reponse)
+        
+        if (strncmp("Retrait", demande, 7) == 0)
         {
-            strcpy(reponse,"KO");
-            write(sockfd,reponse,sizeof(reponse));
+            char *pch;
+            int Res;
+            pch = strtok(demande, " ");
+            id_client=(int)pch[1];
+            id_compte=(int)pch[2];
+            password=&pch[3];
+            somme=(float)pch[4];
+            Res = retrait(id_client,id_compte,password,somme);
+            if(Res==-1)
+            {
+                strcpy(reponse,"KO");
+                write(sockfd,reponse,sizeof(reponse)); 
+            }else{
+                strcpy(reponse,"OK");
+                write(sockfd,reponse,sizeof(reponse)); 
+            }
+        }
+        
+        if (strncmp("Solde", demande, 5) == 0)
+        {
+            char *pch;
+            int Res;
+            pch = strtok(demande, " ");
+            printf ("%s", pch);
+            id_client=(int)pch[1];
+            id_compte=(int)pch[2];
+            password=&pch[3];
+            solde(id_client,id_compte,password);
+        }
+        
+        if(strncmp("Operations", demande, 10) == 0)
+        {
+            char *pch;
+            int Res;
+            pch = strtok(demande, " ");
+            id_client=(int)pch[1];
+            id_compte=(int)pch[2];
+            password=&pch[3];
+            operations(id_client,id_compte,password);
         }
 
         
@@ -168,6 +252,10 @@ int main()
 { 
     int sockfd, connfd, lenght; 
     struct sockaddr_in servaddr,client;
+
+    CLIENT JIN = {1,1,"jin",29.2,{}};
+    CLIENT YANG = {2,1,"yang",27.3,{}};
+    cli[nbCli]=(JIN,YANG);
   
     // creation de socket et vérification 
     sockfd = socket(AF_INET, SOCK_STREAM, 0); 

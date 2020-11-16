@@ -9,21 +9,28 @@
 #define PORT 8080 
 #define SA struct sockaddr 
 
-struct cient_t
+typedef struct 
+{
+    char *type;
+    float montant;
+    char *date;
+}OPERATION;
+
+typedef struct
 {
     int id_client;
     int id_compte;
-    string password;
+    char *password;
     float solde;
-    char operation[10];
-};
+    OPERATION operation[10];
+}CLIENT;
 
 
 void commu(int sockfd) 
 { 
     char reponse[MAX]; 
     int n; 
-    char operation[MAX];
+    char demande[MAX];
     bzero(reponse, sizeof(reponse)); 
     for (;;) { 
         read(sockfd,reponse,sizeof(reponse));
@@ -31,8 +38,8 @@ void commu(int sockfd)
 
         //écrit l'opération du client dans la opération
         n = 0; 
-        while ((operation[n++] = getchar()) != '\n');
-        write(sockfd, operation, sizeof(operation)); 
+        while ((demande[n++] = getchar()) != '\n');
+        write(sockfd, demande, sizeof(demande)); 
 
         //réinitialisation, lire le message du serveur et l'affichier 
         //bzero(reponse, sizeof(reponse)); 
