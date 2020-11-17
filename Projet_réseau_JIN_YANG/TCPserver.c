@@ -55,13 +55,17 @@ int ajout(int client, int compte, char *password, int somme)
             {
                 c.compte[i].solde +=somme; //versement
                 res = 0;
+
+                //Boucle pour chercher la position du dernier opérations
                 int j=0;
-                while (j<10 && c.compte[i].operation[j].type !=NULL) //enregistrer l'opération, la date de cette opération et le montant
+                while (j<10 && c.compte[i].operation[j].type !=NULL) 
                 {
                     j++;
                 }
-                if(j==10) //si il est plein, on supprime le plus ancien et ajouter le plus récente
-                {
+
+                if(j==10) //le tableau est plein
+                {   
+                    //on supprime le plus ancien et ajouter le plus récente opération
                     for (int k=0; k<9; k++) 
                     {
                         c.compte[i].operation[k]=c.compte[i].operation[k+1];
@@ -70,15 +74,12 @@ int ajout(int client, int compte, char *password, int somme)
                     c.compte[i].operation[9].montant = somme;
                     c.compte[i].operation[9].date = ctime(&rawtime);
                 }
-
-                else //vérifier si le tableau d'opération est plein ou pas 
+                else //le tableau d'opération n'est pas plein, on ajoute l'opération actuel dans le tableau
                 {
                     c.compte[i].operation[j].type = "Ajout";
                     c.compte[i].operation[j].montant = somme;
                     c.compte[i].operation[j].date = ctime(&rawtime);
-                }
-                    
-                
+                } 
             }
         }
     }
@@ -95,14 +96,15 @@ int retrait(int client, int compte, char *password, int somme)
         {
             if(c.compte[i].id_compte==compte && (strcmp(c.compte[i].password,password)==0))
             {
-                c.compte[i].solde -=somme; //versement
+                c.compte[i].solde -=somme; //Retrait
                 res = 0;
                 int j=0;
-                while (j<10 && (c.compte[i].operation[j].type !=NULL)) //enregistrer l'opération, la date de cette opération et le montant
+                while (j<10 && (c.compte[i].operation[j].type !=NULL)) 
                 {
                     j++;
                 }
-                if(j==10) //si il est plein, on supprime le plus ancien et ajouter le plus récente
+                
+                if(j==10) 
                 {
                     for (int k=0; k<9; k++) 
                     {
@@ -112,15 +114,12 @@ int retrait(int client, int compte, char *password, int somme)
                     c.compte[i].operation[9].montant = somme;
                     c.compte[i].operation[9].date = ctime(&rawtime);
                 }
-
-                else //vérifier si le tableau d'opération est plein ou pas 
+                else 
                 {
                     c.compte[i].operation[j].type = "Retrait";
                     c.compte[i].operation[j].montant = somme;
                     c.compte[i].operation[j].date = ctime(&rawtime);
-                }
-                    
-                
+                }     
             }
         }
     }
@@ -128,31 +127,42 @@ int retrait(int client, int compte, char *password, int somme)
 }
 
 
-void solde(int client, int compte, char *password)
+void solde(int client, int compte, char *password, int sockfd)
 {
+    char str[256];
     if(c.id_client==client) //vérifier si ce client existe
     {
         for (int i = 0; i<10; i++) 
         {
-             //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
+            //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
             if(c.compte[i].id_compte==compte && (strcmp(c.compte[i].password,password)==0))
             {
                 int cpt=0;
-                while (c.compte[i].operation[cpt].type !=NULL) //chercher le plus récent opération
+                //chercher le plus récent opération et ne pas dépasser la taille du tableau
+                while (c.compte[i].operation[cpt].type !=NULL && cpt<10) 
                 {
                     cpt++;
                 }
-                //afficher le montant actuel et la date du dernier opération
-                if (cpt!=0)
-                    printf("Dernier opération : %s %d€ %s \n",c.compte[i].operation[cpt-1].type, c.compte[i].operation[cpt-1].montant, c.compte[i].operation[cpt-1].date); 
-                printf("Solde:%d \n",c.compte[i].solde); 
+                //stoker le solde actuel dans le chaine str
+                sprintf(str, "Solde:%d\n", c.compte[i].solde);
+                //si le tableau n'est pas vide, stoker la dernière opération dans le chaine str2
+                if (cpt!=0){
+                    char str2[256];
+                    sprintf(str2,"Dernier opération : %s %d€ %s\n",c.compte[i].operation[cpt-1].type, 
+                                                                            c.compte[i].operation[cpt-1].montant, 
+                                                                            c.compte[i].operation[cpt-1].date); 
+                    strcat(str, str2); //concaténer les 2 chaines
+                }
+                //afficher le solde actuel et la dernière opération
+                write(sockfd,str,sizeof(str));
             }
         }
     }
 }
 
-void operations(int client, int compte, char *password)
+void operations(int client, int compte, char *password,int sockfd)
 {
+    char str[MAX];
     if(c.id_client==client) //vérifier si ce client existe
     {
         for (int i = 0; i<10; i++)
@@ -164,10 +174,16 @@ void operations(int client, int compte, char *password)
                 for (int j=9; j>=0; j--)
                 {
                     if (c.compte[i].operation[j].type != NULL)
-                        printf("%s  date: %s  montant:%d \n",c.compte[i].operation[j].type,
-                                                        c.compte[i].operation[j].date,
-                                                        c.compte[i].operation[j].montant);
+                    {
+                        char str2[256];
+                        sprintf(str2,"%s  date: %s  montant:%d \n",c.compte[i].operation[j].type,
+                                                                    c.compte[i].operation[j].date,
+                                                                    c.compte[i].operation[j].montant);
+                        strcat(str, str2);                                     
+                    }
                 }
+
+                write(sockfd,str,sizeof(str));
             }
         } 
     }   
@@ -195,7 +211,7 @@ void commu(int sockfd)
         bzero(reponse, MAX);  //initialiser le buff en zéro
         read(sockfd, demande, sizeof(demande)); // lire le message de client et copier dans buff
         sscanf(demande,"%d",&id_client);
-        printf("Client connecté %d\n",id_client);
+        printf("Client connecté %d\n",id_client); 
         bzero(demande, MAX);
 
         //capter le ID du compte
@@ -212,7 +228,6 @@ void commu(int sockfd)
         write(sockfd,reponse,sizeof(reponse));
         bzero(reponse, MAX);  
         read(sockfd, demande, sizeof(demande)); 
-        //strcpy(password, demande);
         int n=0;
         while(isalpha(demande[n]) || isdigit(demande[n]))
         {
@@ -233,12 +248,14 @@ void commu(int sockfd)
         //tester les opération demandé
         if (strncmp("Ajout", demande, 5) == 0)
         {
+            //capter le montant qu'on veut verser
             bzero(demande, MAX);
             strcpy(reponse,"Entré le montant : ");
             write(sockfd,reponse,sizeof(reponse));
             bzero(reponse, MAX);  
             read(sockfd, demande, sizeof(demande)); 
             sscanf(demande,"%d",&somme);
+            bzero(demande, MAX);
             int Res;
             Res = ajout(id_client,id_compte,password,somme);
 
@@ -246,42 +263,50 @@ void commu(int sockfd)
             if(Res==-1)
             {
                 strcpy(reponse,"KO");
-                write(sockfd,reponse,sizeof(reponse)); 
+                write(sockfd,reponse,sizeof(reponse));
+                read(sockfd, demande, sizeof(demande));  
             }else{
                 strcpy(reponse,"OK");
                 write(sockfd,reponse,sizeof(reponse)); 
+                read(sockfd, demande, sizeof(demande)); 
             }
         }
         
         if (strncmp("Retrait", demande, 7) == 0)
         {
+            //capter le montant qu'on veut retirer
             bzero(demande, MAX);
             strcpy(reponse,"Entré le montant : ");
             write(sockfd,reponse,sizeof(reponse));
             bzero(reponse, MAX);  
             read(sockfd, demande, sizeof(demande)); 
             sscanf(demande,"%d",&somme);
+            bzero(demande, MAX);
             int Res;
             Res = retrait(id_client,id_compte,password,somme);
             
             if(Res==-1)
             {
                 strcpy(reponse,"KO");
-                write(sockfd,reponse,sizeof(reponse)); 
+                write(sockfd,reponse,sizeof(reponse));
+                read(sockfd, demande, sizeof(demande));  
             }else{
                 strcpy(reponse,"OK");
-                write(sockfd,reponse,sizeof(reponse)); 
+                write(sockfd,reponse,sizeof(reponse));
+                read(sockfd, demande, sizeof(demande));  
             }
         }
         
         if (strncmp("Solde", demande, 5) == 0)
         {
-            solde(id_client,id_compte,password);
+            solde(id_client,id_compte,password, sockfd);
+            read(sockfd, demande, sizeof(demande)); 
         }
         
         if(strncmp("Operations", demande, 10) == 0)
         {
-            operations(id_client,id_compte,password);
+            operations(id_client,id_compte,password,sockfd);
+            read(sockfd, demande, sizeof(demande)); 
         }
 
         //vérification de l'existence de exit dans le message
@@ -299,6 +324,7 @@ int main()
     int sockfd, connfd, lenght; 
     struct sockaddr_in servaddr,client;
 
+    //initialisation du client et ses comptes
     for (int i=0; i<10; i++)
     {
         p[i].id_compte=i;
