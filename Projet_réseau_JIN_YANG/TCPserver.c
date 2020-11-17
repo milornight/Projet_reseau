@@ -321,7 +321,7 @@ void commu(int sockfd)
             read(sockfd, demande, sizeof(demande)); 
         }
 
-        strcpy(reponse,"Exit?(Yes / No)");
+        strcpy(reponse,"exit?(Yes / No)");
         write(sockfd,reponse,sizeof(reponse));
         bzero(reponse, MAX);  
         read(sockfd, demande, sizeof(demande));

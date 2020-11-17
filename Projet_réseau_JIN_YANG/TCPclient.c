@@ -10,28 +10,6 @@
 #define PORT 8080 
 #define SA struct sockaddr 
 
-typedef struct 
-{
-    char *type;
-    float montant;
-    char *date;
-}OPERATION;
-
-typedef struct
-{
-    int id_compte;
-    char *password;
-    float solde;
-    OPERATION operation[10];
-}COMPTE;
-
-typedef struct
-{
-    int id_client;
-    COMPTE *compte;
-}CLIENT;
-
-
 void commu(int sockfd) 
 { 
     char reponse[MAX]; 
