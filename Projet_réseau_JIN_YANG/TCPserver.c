@@ -69,9 +69,9 @@ int ajout(int client, int compte, char *password, int somme)
                     if(j==10) //le tableau est plein
                     {   
                         //on supprime le plus ancien et ajouter le plus récente opération
-                        for (int k=0; k<9; k++) 
+                        for (int x=0; x<9; x++) 
                         {
-                            cli[k].compte[i].operation[k]=cli[k].compte[i].operation[k+1];
+                            cli[k].compte[i].operation[x]=cli[k].compte[i].operation[x+1];
                         }
                         cli[k].compte[i].operation[9].type = "Ajout";
                         cli[k].compte[i].operation[9].montant = somme;
@@ -112,9 +112,9 @@ int retrait(int client, int compte, char *password, int somme)
                     
                     if(j==10) 
                     {
-                        for (int k=0; k<9; k++) 
+                        for (int x=0; x<9; x++) 
                         {
-                            cli[k].compte[i].operation[k]=cli[k].compte[i].operation[k+1];
+                            cli[k].compte[i].operation[x]=cli[k].compte[i].operation[x+1];
                         }
                         cli[k].compte[i].operation[9].type = "Retrait";
                         cli[k].compte[i].operation[9].montant = somme;
