@@ -208,8 +208,7 @@ void commu(int sockfd)
         // afficher l'opération dans le terminal
         printf("Opération du client: %s\t", demande);
 
-        printf("----------"); //test
-
+        //tester les opération demandé
         if (strncmp("Ajout", demande, 5) == 0)
         {
             bzero(demande, MAX);
@@ -221,6 +220,8 @@ void commu(int sockfd)
             int Res;
             
             Res = ajout(id_client,id_compte,password,somme);
+
+            //vérifier si l'opération demandé a bien déroulé
             if(Res==-1)
             {
                 strcpy(reponse,"KO");
@@ -312,7 +313,7 @@ int main()
     }
 
     // La serveur est prêt pour écouter et la vérification 
-    if (listen(sockfd, 3) != 0) 
+    if (listen(sockfd, 100) != 0) 
     { 
         printf("Echoué de l'écoute\n"); 
         exit(0); 
