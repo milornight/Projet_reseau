@@ -49,15 +49,16 @@ void commu(int sockfd)
         while ((demande[n++] = getchar()) != '\n');
         write(sockfd, demande, sizeof(demande)); 
 
-        //réinitialisation, lire le message du serveur et l'affichier 
-        bzero(reponse, sizeof(reponse)); 
-
-        //vérification de l'existence de exit dans le message
-        if ((strncmp(reponse, "exit", 4)) == 0) 
+        if ((strncmp(reponse, "Exit", 4)) == 0) 
         { 
             printf("Client Exit...\n"); 
             break; 
         } 
+        //réinitialisation, lire le message du serveur et l'affichier 
+        bzero(reponse, sizeof(reponse)); 
+
+        //vérification de l'existence de exit dans le message
+        
     } 
 } 
 

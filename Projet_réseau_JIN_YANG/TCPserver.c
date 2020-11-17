@@ -13,7 +13,7 @@
 #define MAX 1024 
 #define PORT 8080 
 #define SA struct sockaddr
-//#define nbCli 2
+#define nbCli 3
 
 
 typedef struct 
@@ -39,50 +39,54 @@ typedef struct
 
 COMPTE p[10];
 
-CLIENT c;
-//CLIENT cli[nbcli];
+//CLIENT c;
+CLIENT cli[nbCli];
+
 time_t rawtime;
 
 int ajout(int client, int compte, char *password, int somme)
-{     
+{
     int res = -1;
-    if (c.id_client==client) //vérifier si ce client existe
+    for(int k=0; k<nbCli; k++)
     {
-        for (int i = 0; i<10; i++)
+        if (cli[k].id_client==client) //vérifier si ce client existe
         {
-             //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
-            if(c.compte[i].id_compte==compte && (strcmp(c.compte[i].password,password)==0))
+            for (int i = 0; i<10; i++)
             {
-                c.compte[i].solde +=somme; //versement
-                res = 0;
-
-                //Boucle pour chercher la position du dernier opérations
-                int j=0;
-                while (j<10 && c.compte[i].operation[j].type !=NULL) 
+                //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
+                if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
                 {
-                    j++;
-                }
+                    cli[k].compte[i].solde +=somme; //versement
+                    res = 0;
 
-                if(j==10) //le tableau est plein
-                {   
-                    //on supprime le plus ancien et ajouter le plus récente opération
-                    for (int k=0; k<9; k++) 
+                    //Boucle pour chercher la position du dernier opérations
+                    int j=0;
+                    while (j<10 && cli[k].compte[i].operation[j].type !=NULL) 
                     {
-                        c.compte[i].operation[k]=c.compte[i].operation[k+1];
+                        j++;
                     }
-                    c.compte[i].operation[9].type = "Ajout";
-                    c.compte[i].operation[9].montant = somme;
-                    c.compte[i].operation[9].date = ctime(&rawtime);
+
+                    if(j==10) //le tableau est plein
+                    {   
+                        //on supprime le plus ancien et ajouter le plus récente opération
+                        for (int k=0; k<9; k++) 
+                        {
+                            cli[k].compte[i].operation[k]=cli[k].compte[i].operation[k+1];
+                        }
+                        cli[k].compte[i].operation[9].type = "Ajout";
+                        cli[k].compte[i].operation[9].montant = somme;
+                        cli[k].compte[i].operation[9].date = ctime(&rawtime);
+                    }
+                    else //le tableau d'opération n'est pas plein, on ajoute l'opération actuel dans le tableau
+                    {
+                        cli[k].compte[i].operation[j].type = "Ajout";
+                        cli[k].compte[i].operation[j].montant = somme;
+                        cli[k].compte[i].operation[j].date = ctime(&rawtime);
+                    } 
                 }
-                else //le tableau d'opération n'est pas plein, on ajoute l'opération actuel dans le tableau
-                {
-                    c.compte[i].operation[j].type = "Ajout";
-                    c.compte[i].operation[j].montant = somme;
-                    c.compte[i].operation[j].date = ctime(&rawtime);
-                } 
             }
         }
-    }
+    }     
     return res;
 }
 
@@ -90,36 +94,39 @@ int ajout(int client, int compte, char *password, int somme)
 int retrait(int client, int compte, char *password, int somme)
 {     
     int res = -1;
-    if (c.id_client==client)
+    for(int k=0; k<nbCli; k++)
     {
-        for (int i = 0; i<10; i++)
+        if (cli[k].id_client==client)
         {
-            if(c.compte[i].id_compte==compte && (strcmp(c.compte[i].password,password)==0))
+            for (int i = 0; i<10; i++)
             {
-                c.compte[i].solde -=somme; //Retrait
-                res = 0;
-                int j=0;
-                while (j<10 && (c.compte[i].operation[j].type !=NULL)) 
+                if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
                 {
-                    j++;
-                }
-                
-                if(j==10) 
-                {
-                    for (int k=0; k<9; k++) 
+                    cli[k].compte[i].solde -=somme; //Retrait
+                    res = 0;
+                    int j=0;
+                    while (j<10 && (cli[k].compte[i].operation[j].type !=NULL)) 
                     {
-                        c.compte[i].operation[k]=c.compte[i].operation[k+1];
+                        j++;
                     }
-                    c.compte[i].operation[9].type = "Retrait";
-                    c.compte[i].operation[9].montant = somme;
-                    c.compte[i].operation[9].date = ctime(&rawtime);
+                    
+                    if(j==10) 
+                    {
+                        for (int k=0; k<9; k++) 
+                        {
+                            cli[k].compte[i].operation[k]=cli[k].compte[i].operation[k+1];
+                        }
+                        cli[k].compte[i].operation[9].type = "Retrait";
+                        cli[k].compte[i].operation[9].montant = somme;
+                        cli[k].compte[i].operation[9].date = ctime(&rawtime);
+                    }
+                    else 
+                    {
+                        cli[k].compte[i].operation[j].type = "Retrait";
+                        cli[k].compte[i].operation[j].montant = somme;
+                        cli[k].compte[i].operation[j].date = ctime(&rawtime);
+                    }     
                 }
-                else 
-                {
-                    c.compte[i].operation[j].type = "Retrait";
-                    c.compte[i].operation[j].montant = somme;
-                    c.compte[i].operation[j].date = ctime(&rawtime);
-                }     
             }
         }
     }
@@ -129,32 +136,35 @@ int retrait(int client, int compte, char *password, int somme)
 
 void solde(int client, int compte, char *password, int sockfd)
 {
-    char str[256];
-    if(c.id_client==client) //vérifier si ce client existe
+    char str[MAX];
+    for(int k=0; k<nbCli; k++)
     {
-        for (int i = 0; i<10; i++) 
+        if(cli[k].id_client==client) //vérifier si ce client existe
         {
-            //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
-            if(c.compte[i].id_compte==compte && (strcmp(c.compte[i].password,password)==0))
+            for (int i = 0; i<10; i++) 
             {
-                int cpt=0;
-                //chercher le plus récent opération et ne pas dépasser la taille du tableau
-                while (c.compte[i].operation[cpt].type !=NULL && cpt<10) 
+                //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
+                if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
                 {
-                    cpt++;
+                    int cpt=0;
+                    //chercher le plus récent opération et ne pas dépasser la taille du tableau
+                    while (cli[k].compte[i].operation[cpt].type !=NULL && cpt<10) 
+                    {
+                        cpt++;
+                    }
+                    //stoker le solde actuel dans le chaine str
+                    sprintf(str, "Solde:%d\n", cli[k].compte[i].solde);
+                    //si le tableau n'est pas vide, stoker la dernière opération dans le chaine str2
+                    if (cpt!=0){
+                        char str2[256];
+                        sprintf(str2,"Dernier opération : %s %d€ %s\n",cli[k].compte[i].operation[cpt-1].type, 
+                                                                        cli[k].compte[i].operation[cpt-1].montant, 
+                                                                        cli[k].compte[i].operation[cpt-1].date); 
+                        strcat(str, str2); //concaténer les 2 chaines
+                    }
+                    //afficher le solde actuel et la dernière opération
+                    write(sockfd,str,sizeof(str));
                 }
-                //stoker le solde actuel dans le chaine str
-                sprintf(str, "Solde:%d\n", c.compte[i].solde);
-                //si le tableau n'est pas vide, stoker la dernière opération dans le chaine str2
-                if (cpt!=0){
-                    char str2[256];
-                    sprintf(str2,"Dernier opération : %s %d€ %s\n",c.compte[i].operation[cpt-1].type, 
-                                                                            c.compte[i].operation[cpt-1].montant, 
-                                                                            c.compte[i].operation[cpt-1].date); 
-                    strcat(str, str2); //concaténer les 2 chaines
-                }
-                //afficher le solde actuel et la dernière opération
-                write(sockfd,str,sizeof(str));
             }
         }
     }
@@ -163,30 +173,32 @@ void solde(int client, int compte, char *password, int sockfd)
 void operations(int client, int compte, char *password,int sockfd)
 {
     char str[MAX];
-    if(c.id_client==client) //vérifier si ce client existe
+    for(int k=0; k<nbCli; k++)
     {
-        for (int i = 0; i<10; i++)
+        if(cli[k].id_client==client) //vérifier si ce client existe
         {
-            //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
-            if(c.compte[i].id_compte==compte && (strcmp(c.compte[i].password,password)==0))
+            for (int i = 0; i<10; i++)
             {
-                //afficher le date, le montant et le type des opérations en ordre le plus récent jusqu'à le plus ancien
-                for (int j=9; j>=0; j--)
+                //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
+                if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
                 {
-                    if (c.compte[i].operation[j].type != NULL)
+                    //afficher le date, le montant et le type des opérations en ordre le plus récent jusqu'à le plus ancien
+                    for (int j=9; j>=0; j--)
                     {
-                        char str2[256];
-                        sprintf(str2,"%s  date: %s  montant:%d \n",c.compte[i].operation[j].type,
-                                                                    c.compte[i].operation[j].date,
-                                                                    c.compte[i].operation[j].montant);
-                        strcat(str, str2);                                     
+                        if (cli[k].compte[i].operation[j].type != NULL)
+                        {
+                            char str2[256];
+                            sprintf(str2,"%s  date: %s  montant:%d \n",cli[k].compte[i].operation[j].type,
+                                                                        cli[k].compte[i].operation[j].date,
+                                                                        cli[k].compte[i].operation[j].montant);
+                            strcat(str, str2);                                     
+                        }
                     }
+                    write(sockfd,str,sizeof(str));
                 }
-
-                write(sockfd,str,sizeof(str));
-            }
+            } 
         } 
-    }   
+    }  
 }
 
 
@@ -309,10 +321,20 @@ void commu(int sockfd)
             read(sockfd, demande, sizeof(demande)); 
         }
 
+        strcpy(reponse,"Exit?(Yes / No)");
+        write(sockfd,reponse,sizeof(reponse));
+        bzero(reponse, MAX);  
+        read(sockfd, demande, sizeof(demande));
+        
         //vérification de l'existence de exit dans le message
-        if ((strncmp(reponse, "exit", 4)) == 0) 
+        if ((strncmp(demande, "Yes", 3)) == 0) 
         { 
             printf("Client Exit...\n"); 
+            bzero(demande, MAX);
+            strcpy(reponse,"Exit");
+            write(sockfd,reponse,sizeof(reponse));
+            bzero(reponse, MAX);  
+            read(sockfd, demande, sizeof(demande));
             break;
         } 
     } 
@@ -324,7 +346,7 @@ int main()
     int sockfd, connfd, lenght; 
     struct sockaddr_in servaddr,client;
 
-    //initialisation du client et ses comptes
+    //initialisation des client et ses comptes
     for (int i=0; i<10; i++)
     {
         p[i].id_compte=i;
@@ -332,10 +354,13 @@ int main()
         p[i].solde=i*10;
     }
 
-    c.id_client=1;
-    for (int i=0; i<10; i++)
+    for(int j=0; j<nbCli; j++)
     {
-        c.compte[i]=p[i];
+        cli[j].id_client=j;
+        for(int k=0; k<10; k++)
+        {
+            cli[j].compte[k]=p[k];
+        }
     }
     
   
