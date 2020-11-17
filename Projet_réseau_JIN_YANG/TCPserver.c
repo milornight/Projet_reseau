@@ -283,8 +283,7 @@ void commu(int sockfd)
                 read(sockfd, demande, sizeof(demande)); 
             }
         }
-        
-        if (strncmp("Retrait", demande, 7) == 0)
+        else if (strncmp("Retrait", demande, 7) == 0)
         {
             //capter le montant qu'on veut retirer
             bzero(demande, MAX);
@@ -308,17 +307,23 @@ void commu(int sockfd)
                 read(sockfd, demande, sizeof(demande));  
             }
         }
-        
-        if (strncmp("Solde", demande, 5) == 0)
+        else if (strncmp("Solde", demande, 5) == 0)
         {
             solde(id_client,id_compte,password, sockfd);
             read(sockfd, demande, sizeof(demande)); 
         }
-        
-        if(strncmp("Operations", demande, 10) == 0)
+        else if(strncmp("Operations", demande, 10) == 0)
         {
             operations(id_client,id_compte,password,sockfd);
             read(sockfd, demande, sizeof(demande)); 
+        }
+        else
+        {
+            strcpy(reponse,"Pas de opération correcte");
+            write(sockfd,reponse,sizeof(reponse));
+            bzero(reponse, MAX);  
+            read(sockfd, demande, sizeof(demande));
+            bzero(demande, MAX);
         }
 
         strcpy(reponse,"exit?(Yes / No)");
