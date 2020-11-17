@@ -51,8 +51,6 @@ void commu(int sockfd)
 
         //réinitialisation, lire le message du serveur et l'affichier 
         bzero(reponse, sizeof(reponse)); 
-        read(sockfd, reponse, sizeof(reponse)); 
-        printf("Message Serveur : %s\n", reponse); 
 
         //vérification de l'existence de exit dans le message
         if ((strncmp(reponse, "exit", 4)) == 0) 
