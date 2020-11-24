@@ -13,6 +13,7 @@
 #define MAX 1024 
 #define PORT 8080 
 #define SA struct sockaddr
+#define nbCompt 10
 #define nbCli 3
 
 
@@ -34,10 +35,10 @@ typedef struct
 typedef struct
 {
     int id_client;
-    COMPTE compte[10];
+    COMPTE compte[nbCompt];
 }CLIENT;
 
-COMPTE p[10];
+COMPTE p[nbCompt];
 
 //CLIENT c;
 CLIENT cli[nbCli];
@@ -51,7 +52,7 @@ int ajout(int client, int compte, char *password, int somme)
     {
         if (cli[k].id_client==client) //vérifier si ce client existe
         {
-            for (int i = 0; i<10; i++)
+            for (int i = 0; i<nbCompt; i++)
             {
                 //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
                 if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
@@ -98,7 +99,7 @@ int retrait(int client, int compte, char *password, int somme)
     {
         if (cli[k].id_client==client)
         {
-            for (int i = 0; i<10; i++)
+            for (int i = 0; i<nbCompt; i++)
             {
                 if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
                 {
@@ -141,7 +142,7 @@ void solde(int client, int compte, char *password, int sockfd)
     {
         if(cli[k].id_client==client) //vérifier si ce client existe
         {
-            for (int i = 0; i<10; i++) 
+            for (int i = 0; i<nbCompt; i++) 
             {
                 //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
                 if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
@@ -164,6 +165,7 @@ void solde(int client, int compte, char *password, int sockfd)
                     }
                     //afficher le solde actuel et la dernière opération
                     write(sockfd,str,sizeof(str));
+                    printf("%s\n", str);
                 }
             }
         }
@@ -177,7 +179,7 @@ void operations(int client, int compte, char *password,int sockfd)
     {
         if(cli[k].id_client==client) //vérifier si ce client existe
         {
-            for (int i = 0; i<10; i++)
+            for (int i = 0; i<nbCompt; i++)
             {
                 //vérifier s'il a un compte correspond et le mot de passe est correcte ou pas
                 if(cli[k].compte[i].id_compte==compte && (strcmp(cli[k].compte[i].password,password)==0))
@@ -195,6 +197,7 @@ void operations(int client, int compte, char *password,int sockfd)
                         }
                     }
                     write(sockfd,str,sizeof(str));
+                    printf("%s\n", str);
                 }
             } 
         } 
@@ -267,18 +270,22 @@ void commu(int sockfd)
             bzero(reponse, MAX);  
             read(sockfd, demande, sizeof(demande)); 
             sscanf(demande,"%d",&somme);
+            printf("montant versé : %d\n",somme);
             bzero(demande, MAX);
             int Res;
             Res = ajout(id_client,id_compte,password,somme);
+            printf("Res= %d\n", Res);
 
             //vérifier si l'opération demandé a bien déroulé
             if(Res==-1)
             {
                 strcpy(reponse,"KO");
+                printf("La commande Ajout est en échec\n");
                 write(sockfd,reponse,sizeof(reponse));
                 read(sockfd, demande, sizeof(demande));  
             }else{
                 strcpy(reponse,"OK");
+                printf("La commande Ajout s'est bien dérouler\n");
                 write(sockfd,reponse,sizeof(reponse)); 
                 read(sockfd, demande, sizeof(demande)); 
             }
@@ -292,17 +299,21 @@ void commu(int sockfd)
             bzero(reponse, MAX);  
             read(sockfd, demande, sizeof(demande)); 
             sscanf(demande,"%d",&somme);
+            printf("montant retiré : %d\n",somme);
             bzero(demande, MAX);
             int Res;
             Res = retrait(id_client,id_compte,password,somme);
-            
+            printf("Res= %d\n", Res);
+
             if(Res==-1)
             {
                 strcpy(reponse,"KO");
+                printf("La commande Retrait est en échec\n");
                 write(sockfd,reponse,sizeof(reponse));
                 read(sockfd, demande, sizeof(demande));  
             }else{
                 strcpy(reponse,"OK");
+                printf("La commande Retrait s'est bien dérouler\n");
                 write(sockfd,reponse,sizeof(reponse));
                 read(sockfd, demande, sizeof(demande));  
             }
@@ -352,7 +363,7 @@ int main()
     struct sockaddr_in servaddr,client;
 
     //initialisation des client et ses comptes
-    for (int i=0; i<10; i++)
+    for (int i=0; i<nbCompt; i++)
     {
         p[i].id_compte=i;
         p[i].password="jin";
@@ -362,7 +373,7 @@ int main()
     for(int j=0; j<nbCli; j++)
     {
         cli[j].id_client=j;
-        for(int k=0; k<10; k++)
+        for(int k=0; k<nbCompt; k++)
         {
             cli[j].compte[k]=p[k];
         }
